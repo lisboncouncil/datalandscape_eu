@@ -1,0 +1,125 @@
+/* 
+    Document   : datalandscape_misc.css
+    Created on : 31-mag-2014, 11.40.58
+    Author     : marcello
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+.table>thead>tr>td.info, .table>tbody>tr>td.info, .table>tfoot>tr>td.info, .table>thead>tr>th.info, .table>tbody>tr>th.info, .table>tfoot>tr>th.info, .table>thead>tr.info>td, .table>tbody>tr.info>td, .table>tfoot>tr.info>td, .table>thead>tr.info>th, .table>tbody>tr.info>th, .table>tfoot>tr.info>th {
+background-color: #d9edf7;
+}
+
+div#table-lm-cont{
+    border: 1px solid #DDD;
+    border-radius: 15px;
+    background-color: #f5f5f5;
+}
+
+#table-lm { 
+    
+}
+
+#table-lm tr td{ 
+    border: 0;
+}
+
+#table-lm td{ 
+    
+}
+
+#table-lm td.brd{
+    /*border: 1px solid #004000; */ 
+    margin: 10px;
+    
+}
+
+
+#table-lm tr td { 
+    padding: 5px;
+    /* background-color: #ace; */
+    text-align: center;
+    vertical-align: middle;
+}
+
+
+#table-lm-fw{
+    margin:0;
+    background-color: transparent;
+}
+
+#table-lm-fw tr td{
+    border: 0;
+}
+
+td.td-lm-gt ,
+td.td-lm-down {
+    font-size: 50px;
+}
+
+#table-lm td.td-lm-down {
+    line-height: 0.3em;
+    margin: 0;
+    padding: 0;
+}
+
+.table-lab{
+    font-size: 20px;
+    font-weight: bold;
+    
+}
+
+#table-lm-body{
+    background-color: transparent;
+}
+
+
+#table-lm .label-medium{
+    font-size: 14px;
+    font-weight: normal;
+}
+
+.rnd-area{
+    border-radius: 5px;
+    margin: 10px;
+    border: 1px solid #DDD;
+    padding: 10px;
+    background-color: #FFF;
+}
+.table-label-grey{
+    font-size: 30px;
+    color: #444;
+}
+
+#table-lm-cont a:link, 
+#table-lm-cont a:visited {
+    color: inherit;
+    
+}
+
+#table-lm-cont a:hover{
+    color: initial;
+    text-decoration: none;
+}
+
+#table-lm-cont a:hover div{
+    color: initial;
+    text-decoration: none;
+    background-color: #d9edf7;
+}
+
+.area-verde{
+    background-color: #dff0d8;
+}
+
+#table-lm-body .center-cont{
+    border: 1px solid #DDD;
+    background-color: #fcf8e3;
+    border-radius: 10px;
+}
+
+#table-lm-footer{
+    font-size: 30px;
+    color: #999;
+    font-style: italic;
+}

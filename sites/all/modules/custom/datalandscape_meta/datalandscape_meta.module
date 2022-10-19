@@ -1,0 +1,135 @@
+<?php
+
+
+function datalandscape_meta_menu() {
+    
+    $items['admin/datalandscape/test/%'] = array(
+        'title' => 'Company URL parser',
+        'page callback' => '_datalandscape_meta_get',
+        'access arguments' => array('administer content'),
+        'page arguments' => array(3),
+        'type' => MENU_NORMAL_ITEM,
+      );
+
+    $items['admin/datalandscape/update/%'] = array(
+        'title' => 'Company URL parser',
+        'page callback' => '_datalandscape_meta_set',
+        'access arguments' => array('administer content'),
+        'page arguments' => array(3, true),
+        'type' => MENU_NORMAL_ITEM,
+      );
+
+    $items['admin/datalandscape/update/all'] = array(
+        'title' => 'Company URL parser',
+        'page callback' => '_datalandscape_meta_set_all',
+        'access arguments' => array('administer content'),
+        'type' => MENU_NORMAL_ITEM,
+      );
+    
+    return $items;
+}
+
+function _datalandscape_meta_set_all(){
+	// Return all nids of nodes of type "page".
+	$nids = db_select('node', 'n')
+	    ->fields('n', array('nid'))
+	    ->fields('n', array('type'))
+	    ->condition('n.type', 'organisation')
+	    ->execute()
+	    ->fetchCol(); // returns an indexed array
+	// Now return the node objects.
+	
+	dsm($nids);
+
+	foreach($nids as $nid){
+		$node = _datalandscape_meta_set($nid, true);
+		dsm($node);
+	}
+	
+	return '';
+}
+
+function _datalandscape_meta_set($nid, $save = false){
+
+	$node = node_load($nid);
+	if(isset($node->field_website[LANGUAGE_NONE][0]['value'])){
+		$url = $node->field_website[LANGUAGE_NONE][0]['value'];
+	
+		$tags = _get_get_meta_tags($url);
+		if(isset($tags['description'])){
+			$node->body[LANGUAGE_NONE][0]=array(
+				'value' => $tags['description'],
+				'format'=>'plain_text',
+				);
+		}
+
+		if($save){
+			node_save($node);
+		}
+		return $node;
+	}
+	else{
+		return false;
+	}
+	
+}
+
+function datalandscape_meta_node_presave($node) {
+	if($node->type === 'organisation'){
+		$url = $node->field_website[LANGUAGE_NONE][0]['value'];
+		$tags = _get_get_meta_tags($url);
+		if(isset($tags['description'])){
+	    $node->body[LANGUAGE_NONE][0]=array(
+				'value' => $tags['description'],
+				'format'=>'plain_text',
+				);
+	  }
+  }
+}
+
+
+function _datalandscape_meta_get($nid){
+
+	$node = node_load($nid);
+
+	$url = $node->field_website[LANGUAGE_NONE][0]['value'];
+	$tags = _get_get_meta_tags($url);
+	dsm($tags);
+	dsm($url);
+	dsm($node);
+	return '';
+}
+
+function _get_get_meta_tags($url, $complete=false){
+	
+	
+	$tags_noenc = get_meta_tags($url);
+
+	$tags = array(); 
+
+	foreach($tags_noenc as $mkey => $mval) { 
+	   $tags[$mkey] = html_entity_decode( str_to_utf8($mval) ); 
+	}
+
+	if(!$complete){
+		return $tags;
+	}
+
+	$str = file_get_contents($url);
+	preg_match_all('~<\s*meta\s+property="(og:[^"]+)"\s+content="([^"]*)~i', $str, $matches);
+	if(is_array($matches[1])){
+		foreach($matches[1] as $k=>$m){
+			$tags[$m]=$matches[2][$k];
+		}
+	}
+
+	return $tags;
+}
+
+function str_to_utf8($string) { 
+    if (mb_detect_encoding($string, 'UTF-8', true) === false) { 
+    	$string = utf8_encode($string); 
+    } 
+    return $string; 
+}
+

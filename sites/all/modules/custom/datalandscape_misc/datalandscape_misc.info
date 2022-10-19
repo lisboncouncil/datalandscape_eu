@@ -1,0 +1,9 @@
+name = DataLandscape Misc
+description = Personalization on dataLandscape.eu
+package = Data Landscape
+core = 7.x
+version = "7.x.0.1"
+project = "datalandscape_misc"
+dependencies[]=libraries
+dependencies[]=leaflet
+stylesheets[all][] = datalandscape_misc.css

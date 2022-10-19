@@ -1,0 +1,57 @@
+<?php
+
+function datalandscape_autolocation_node_update($node) {
+
+	if($node->type === 'organisation'){
+
+		$node = node_load($node->nid);
+		$lat = $node->field_geolocation[LANGUAGE_NONE][0]['lat'];
+		$lng = $node->field_geolocation[LANGUAGE_NONE][0]['lng'];
+	
+	}
+}
+
+function _datalandscape_autolocation_up($nid) {
+	
+	$node = node_load($nid);
+	$node_wrapper = entity_metadata_wrapper('node', $node);
+	$node_wrapper->field_myfield->set(1);
+	$node_wrapper->save();
+}
+
+
+/**
+	"address": {
+		"house_number": "15",
+		"road": "Rue de la Sablonnière - Zavelput",
+		"residential": "Quartier des Libertés - Vrijheidswijk",
+		"city_district": "Brussels",
+		"city": "Ville de Bruxelles - Stad Brussel",
+		"county": "Brussels-Capital",
+		"state": "Brussels-Capital",
+		"postcode": "1000",
+		"country": "Belgium",
+		"country_code": "be"
+	}
+*/
+function datalandscape_autolocation_geocoder_reverse($lat, $lng, $options=null) {
+
+  $KEY_NOMINATIM = 'AqE69g28PEaock1GODOgm2rrEtuH4L3i';
+
+
+  $url = "http://open.mapquestapi.com/nominatim/v1/reverse.php?format=json&lat=".$lat."&lon=".$lng."&accept-language=en&key=" . $KEY_NOMINATIM;
+
+  $myadress = file_get_contents($url);
+
+  $json = json_decode($myadress);
+
+  if(isset($json->address)) {
+    return (array) $json->address;
+  }
+  else{
+    return array();
+  }
+
+}
+
+

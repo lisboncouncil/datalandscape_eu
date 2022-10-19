@@ -1,0 +1,5 @@
+name = DataLandscape Autolocation
+core = "7.x"
+
+dependencies[] = "geocoder"
+

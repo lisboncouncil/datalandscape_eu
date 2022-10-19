@@ -1,0 +1,6 @@
+name = DataLandscape Metadata
+description = Get the metadata from companies
+package = Data Landscape
+core = 7.x
+version = "7.x.0.1"
+project = "datalandscape_meta"

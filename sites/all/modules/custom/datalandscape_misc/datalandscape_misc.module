@@ -1,0 +1,453 @@
+<?php
+
+define('DATALANDSCAPE_VOCABULARY', 2);
+define('DATALANDSCAPE_TID_FW_CONDITION', 8);
+define('DATALANDSCAPE_TID_VERTICAL_APPS', 16);
+define('DATALANDSCAPE_TID_ANALYTICS', 2);
+define('DATALANDSCAPE_TID_CROSS_INFRA', 5);
+define('DATALANDSCAPE_TID_LEAD_USERS', 17);
+define('DATALANDSCAPE_TID_DATA_SOURCES', 7);
+define('DATALANDSCAPE_TID_DATA_HOLDERS', 21);
+define('DATALANDSCAPE_TID_TOOLS_TECH', 15);
+define('DATALANDSCAPE_BUNDLE_BLOG', 'blog');
+
+/**
+ * Implements hook_leaflet_map_info_alter().
+ */
+function datalandscape_misc_leaflet_map_info_alter(&$map_info) {
+    
+  $map_info['esri-world_street_map']['settings']['maxClusterRadius'] = 30;
+  $map_info['esri-world_street_map']['settings']['scrollWheelZoom'] = FALSE;
+  //$map_info['esri-world_street_map']['settings']['spiderfyOnMaxZoom'] = TRUE;
+  //$map_info['esri-world_street_map']['settings']['shadowUrl'] = 30;
+
+}
+
+function _reparse_event($event){
+    
+    $o = new stdClass();
+    $o->uid=$event->uid['value'];
+    $o->url=$event->url['value'];
+    $o->title=  "<![CDATA[".$event->summary['value']."]]>";
+    $o->location=$event->location['value'];
+    $o->geo= (isset($event->geo) && is_array($event->geo['value']) ) ? implode(",",$event->geo['value']) : '';
+    $o->dstart= sprintf("%04d-%02d-%02d", 
+            $event->dtstart['value']['year'], 
+            $event->dtstart['value']['month'], 
+            $event->dtstart['value']['day']);
+    $o->dtend= sprintf("%04d-%02d-%02d", 
+            $event->dtend['value']['year'], 
+            $event->dtend['value']['month'], 
+            $event->dtend['value']['day']);
+    
+    if(isset($event->description[0]['value'])){
+        $d = explode('\n', $event->description[0]['value']);
+        $o->description=  "<![CDATA[".$d[0]."]]>";
+    }
+    else{
+        $o->description= '';
+    }
+    
+    $xml ='';
+    
+    foreach($o as $k=>$a){
+        $xml.="\t<$k>$a</$k>\n";
+    }
+    return $xml;
+}
+
+function datalandscape_misc_menu() {
+    
+    $items['event_parser'] = array(
+        'title' => 'Event parser',
+        'page callback' => '_datalandscape_misc_parseevent',
+        'access arguments' => array('access content'),
+        'type' => MENU_NORMAL_ITEM,
+      );
+    
+    return $items;
+}
+
+
+function _datalandscape_misc_parseevent(){
+    
+    libraries_load('iCalcreator');
+    
+    $ical_url = "http://lanyrd.com/topics/big-data/in/europe/big-data-in-europe.ics";
+    $config = array( "unique_id" => "datalandscape.eu" );
+    $v = new vcalendar( $config );
+    $v->setConfig( "url", $ical_url );
+      // iCalcreator also support remote files
+    $v->parse();
+    $xml='<?xml version="1.0" encoding="UTF-8"?>';
+    $xml.="<events>\n";
+    foreach($v->components as $event){
+        $xml.="<event>\n"._reparse_event($event)."</event>\n";
+    }
+    $xml.="</events>\n";
+    header("Content-type: text/xml");
+    print $xml;
+}
+
+/**
+ * Implements hook_block_info() 
+ * @return string
+ */
+function datalandscape_misc_block_info() {
+  $blocks['map_filter'] = array(
+    'info' => t('Map filter'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  $blocks['logical_model'] = array(
+    'info' => t('Logical model'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  return $blocks;
+}
+
+
+function datalandscape_misc_block_view($delta=''){
+    
+  $block = array();
+ 
+  switch($delta) {
+    case 'map_filter' :
+      $block['content'] = _datalandscape_misc_filter_map();
+      break;
+  
+    case 'logical_model' :
+      $block['content'] = _datalandscape_misc_logical_model();
+      break;
+  }
+ 
+  return $block;
+}
+
+function _get_tax_info($taxs, $tid){
+    foreach($taxs as $tax){
+        if($tax->tid == $tid){
+            return $tax;
+        }
+    }
+}
+
+function _datalandscape_misc_logical_model(){
+    
+    $taxs=_data_landscape_misc_get_taxonomies();
+    
+    // get the logical model sub framework condition
+    $children_fwc=array();
+    foreach($taxs as $k=>$tax){
+        
+        $count = _taxonomy_term_count_nodes($tax->tid);
+        $url = drupal_lookup_path('alias', 'taxonomy/term/'.$tax->tid);
+        $taxs[$k]->count = $count;
+        $taxs[$k]->url = $url;
+        
+        if($tax->parents[0] == DATALANDSCAPE_TID_FW_CONDITION){
+            $children_fwc[]=$taxs[$k];
+        }
+    }
+    
+    //dsm($taxs);
+    //dsm($children_fwc);
+    
+    $out='';
+    
+    $out.="<div id=\"table-lm-cont\">\n";
+    
+    $out.="<table id=\"table-lm\" class=\"table\">\n";
+    
+    
+    // testata enabling players
+    $out.="<tr id=\"table-lm-players\">
+        <td class=\"col-sm-3\"></td>
+        <td colspan=\"3\" class=\"col-sm-6\">
+            <a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_FW_CONDITION)->url)."\">
+                <div class=\"rnd-area area-verde\"  data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_FW_CONDITION)->description)."\">
+                <table id=\"table-lm-fw\" class=\"table\">
+                    <tbody>
+                    <tr>
+                        <td class=\"table-lab\" colspan=\"".count($children_fwc)."\">
+                            <div>
+                                <i class=\"fa fa-cogs\"></i> &nbsp;Enabling Players <span class=\"badge\">"
+                                    . _get_tax_info($taxs, DATALANDSCAPE_TID_FW_CONDITION)->count."</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>\n";
+                    foreach($children_fwc as $ch){
+
+                        $out.="<td><span class=\"label label-primary label-medium\">".$ch->name."</span></td>\n";
+                    }
+                    $out.="
+                    </tr>
+                </tbody>
+                </table>
+            </div>
+            </a>
+        </td>
+        <td class=\"col-sm-3\"></td>
+        </tr>
+        
+        <tr><td colspan=\"".count($children_fwc)."\" class=\"td-lm-gt td-lm-down\"><i class=\"fa fa-caret-down\"></i></td></tr> 
+       ";
+        
+    // -- fine testata
+    
+    // Sotto tabella a 5
+    $out.="<tr id=\"table-lm-body\">\n";
+        $out.="<td class=\"td-lm-datasource active \">
+            <a href=\"/data-landscape-type/data-holders\">
+                <div class=\"table-lab rnd-area\"  data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_DATA_HOLDERS)->description)."\">
+                            <i class=\"fa fa-database\"></i> &nbsp;Data holders <span class=\"badge\">"
+                            . "</span></div></a></td>\n";
+        $out.="<td class=\"td-lm-gt active\"><i class=\"fa fa-caret-right\"></i></td>\n";
+        $out.="<td><div class=\"center center-cont\">\n";
+            $out.="<table id=\"table-lm-body\" class=\"table\">\n";
+            // data market
+            $out.="<tr><td class=\"table-lab\" colspan=\"3\"><a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_TOOLS_TECH)->url)."\">
+                    <div class=\"rnd-area warning\" data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_TOOLS_TECH)->description)."\">ICT enablers 
+                        <span class=\"badge\">"
+                            . _get_tax_info($taxs, DATALANDSCAPE_TID_TOOLS_TECH)->count."
+                        </span>
+                    </div></a></td></tr>\n";
+            $out.="<tr>\n";
+                $out.="<td class=\"brd\"><a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_DATA_SOURCES)->url)."\">
+                    <div class=\"rnd-area table-lab\" data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_DATA_SOURCES)->description)."\">Marketplaces 
+                    <span class=\"badge\">"
+                        . _get_tax_info($taxs, DATALANDSCAPE_TID_DATA_SOURCES)->count."
+                    </span></div></a></td>\n";
+                $out.="<td class=\"brd\"><a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_ANALYTICS)->url)."\">
+                    <div class=\"rnd-area table-lab\" data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_ANALYTICS)->description)."\">Analytics 
+                        <span class=\"badge\">"
+                            . _get_tax_info($taxs, DATALANDSCAPE_TID_ANALYTICS)->count."
+                        </span></div></a></td>\n";
+                $out.="<td class=\"brd \" data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_VERTICAL_APPS)->description)."\">
+                            <a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_VERTICAL_APPS)->url)."\">
+                                <div class=\"rnd-area table-lab\">Vertical apps <span class=\"badge\">"
+                            . _get_tax_info($taxs, DATALANDSCAPE_TID_VERTICAL_APPS)->count."</span></div></a></td>\n";
+            $out.="</tr>\n";
+            $out.="<tr><td  colspan=\"3\"><a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_CROSS_INFRA)->url)."\">
+                <div class=\"table-lab rnd-area\"  data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_CROSS_INFRA)->description)."\">Cross infrastructure <span class=\"badge\">"
+                            . _get_tax_info($taxs, DATALANDSCAPE_TID_CROSS_INFRA)->count."</span></div></a></td></tr>\n";
+            $out.="<tr><td colspan=\"3\" class=\"table-label-grey\"><em>Data Market</em></tr>\n";
+            $out.="</table>\n";
+        $out.="</div></td>\n";
+        $out.="<td class=\"td-lm-gt active\"><i class=\"fa fa-caret-right\"></i></td>\n";
+        $out.="<td class=\"td-lm-datauser active\" >
+            <a href=\"".url(_get_tax_info($taxs, DATALANDSCAPE_TID_LEAD_USERS)->url)."\">
+                <div class=\"table-lab rnd-area\"  data-toggle=\"tooltip\" data-placement=\"top\" title=\""
+                        .  htmlentities(_get_tax_info($taxs, DATALANDSCAPE_TID_LEAD_USERS)->description)."\"><i class=\"fa fa-user\"></i> &nbsp;Data Users <span class=\"badge\">"
+                            . _get_tax_info($taxs, DATALANDSCAPE_TID_LEAD_USERS)->count."</span></div></a>
+            </td>\n";
+    $out.="</tr>\n";
+    
+    $out.="<tr><td id=\"table-lm-footer\" colspan=\"5\">Data Landscape</td></tr>\n";
+    
+    $out.="</table>\n";
+    
+    $out.="</div>\n";
+    return $out;
+}
+
+function _data_landscape_misc_get_taxonomies(){
+    $taxs = taxonomy_get_tree(DATALANDSCAPE_VOCABULARY);
+    return $taxs;
+}
+
+function _taxonomy_term_count_nodes($tid, $type = 'organisation') {
+    
+    static $count;
+
+    if (isset($count[$type][$tid])) {
+      return $count[$type][$tid];
+    }
+
+    $query = db_select('taxonomy_index', 't');
+    $query->condition('tid', $tid, '=');
+    $query->addExpression('COUNT(*)', 'count_nodes');
+
+
+    // Restrict query by Content Type 
+    if (!empty($type)) {
+      $query->join('node', 'n', 't.nid = n.nid');
+      $query->condition('type', $type, '=');
+    }
+  
+
+    $count[$type][$tid] = $query->execute()->fetchField();
+  
+  return $count[$type][$tid];
+}
+
+function _datalandscape_misc_filter_map(){
+    
+    $path_suffix = "/sites/default/files/amarkers/named/i-";
+    $taxs=_data_landscape_misc_get_taxonomies();
+    
+    $out = '';
+    $out.="<ul class=\"map-filters\">\n";
+    if(is_array($taxs)){
+        foreach($taxs as $tax){
+            $url = drupal_lookup_path('alias', 'taxonomy/term/'.$tax->tid);
+            if($tax->parents[0] == 0){
+                $out.="<li><img class=\"legend-markers\" src=\"".$path_suffix.$tax->name.".png\" alt=\"\" /> "
+                      .l($tax->name, $url)
+                      ."</li>\n";
+            }
+        }
+    }
+    
+    $out.="</ul>";
+    
+    return $out;
+}
+
+function datalandscape_misc_node_presave($node) {
+  if ($node->type =='organisation') {
+    
+    $tid = $node->field_action_area[LANGUAGE_NONE][0]['tid'];
+    $parent_tid = taxonomy_get_parents($tid);
+    
+    if(isset($node->field_action_area[LANGUAGE_NONE][1]['tid'])) {
+        $tid2 = $node->field_action_area[LANGUAGE_NONE][1]['tid'];
+        $parent_tid2 = taxonomy_get_parents($tid2);
+    }
+    else{
+        $tid2 = $parent_tid2 = null;
+    }
+    
+    $new_tids = array();
+    
+    if(is_array($parent_tid) && count($parent_tid)>0) {
+        
+        foreach($parent_tid as $k=>$o) {
+            $new_tids[] = $k;
+            $node->field_action_area[LANGUAGE_NONE][0]['tid']=$k;
+        }
+        
+        $node->field_action_area[LANGUAGE_NONE][1]['tid']=$tid;
+
+    }
+  }
+}
+
+
+
+function datalandscape_misc_facet_items_alter(&$build, &$settings) {
+    
+    if ($settings->facet == "field_key_company") {
+      foreach($build as $key => $item) {
+          if($item["#markup"] == '1') {
+              $build[$key]["#markup"] = 'Key companies';
+          }
+          else{
+              unset($build[$key]);
+          }
+      }
+    }
+    
+    else if ($settings->facet == "field_sme_company") {
+      foreach($build as $key => $item) {
+        if($item["#markup"] == '1') {
+            $build[$key]["#markup"] = 'SME companies';
+        }
+        else{
+            $build[$key]["#markup"] = 'Large companies';
+        }
+      }
+    }
+}
+
+
+function datalandscape_misc_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'organisation_node_form') {
+    $form['field_crunchbase_id']['#access'] = 0;
+    $form['field_main_location']['#access'] = 0;
+    $form['field_action_area'][LANGUAGE_NONE]['#multiple'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_ds_fields_info().
+ */
+function datalandscape_misc_ds_fields_info($entity_type) {
+
+  $fields = array();
+
+  if ($entity_type === 'node') {
+
+    // Add custom field for status code.
+    $fields['ds_code_backreference'] = array(
+      'title' => t('DS FUNC: backreference blogpost'),
+      'field_type' => DS_FIELD_TYPE_FUNCTION,
+      'ui_limit' => array('organisation|*'),
+      'function' => '_datalandscape_misc_backreference_blogpost',
+      'properties' => array(
+        'formatters' => array(
+          'text_default' => t('Default'),
+        ),
+      ),
+    );
+  }
+
+  return array($entity_type => $fields);
+}
+
+
+function _datalandscape_misc_backreference_blogpost($field){
+    
+  $sql = 'SELECT DISTINCT entity_id AS reference '
+          . ' FROM {field_data_field_companies_references}'
+          . ' WHERE field_companies_references_nid IS NOT NULL'
+          . ' AND bundle= :bundle '
+          . ' AND field_companies_references_nid = :nid';
+  
+  $query = db_query($sql, array(':bundle'=> DATALANDSCAPE_BUNDLE_BLOG , ':nid' => $field['entity']->nid));
+  $results = $query->fetchAll();
+  $nodes = [];
+  $string='<div class="items-backreference">';
+  
+  foreach ($results as $result) {
+      
+      $node = node_load(intval($result->reference));
+      $node->alias_path = drupal_get_path_alias('node/'.$node->nid);
+      $nodes[] = $node;
+      
+      $string.='<div class="item-backreference"><a href="/'.$node->alias_path.'">'.$node->title.'</a></div>';
+  }
+  
+  $string.='</div>';
+  
+  return $string;
+  
+  /*
+  $tid = $field['entity']->field_current_status[LANGUAGE_NONE][0]['nid'];
+  $term = taxonomy_term_load($tid);
+
+  $output = '<div class="field field-name-status-code ' . $term_class . '">';
+  $output .= '<div class="status-el glyphicon ' . $icons[$term_class]['class'] . '" aria-hidden="true"></div><div class="status-el status-text">' . $term->name . '</div>';
+  $output .= '</div>';
+  return $output;
+  
+  
+    
+  if (isset($field['entity']->name)) {
+    return check_plain(strrev($field['entity']->name));
+  }*/
+}
+
+function datalandscape_misc_custom_theme() {
+  if (arg(0) == 'import') {
+    return 'seven';
+  }
+}

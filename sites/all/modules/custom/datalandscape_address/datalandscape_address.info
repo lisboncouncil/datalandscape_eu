@@ -1,0 +1,7 @@
+name = DataLandscape Address
+description = Migration of the Address in dataLandscape.eu
+package = Data Landscape
+core = 7.x
+version = "7.x.0.1"
+project = "datalandscape_address"
+files[] = includes/class.datalandscape_geocoder.php

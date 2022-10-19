@@ -1,0 +1,139 @@
+/**
+ * Css for EDM Tools
+ * M.Marcello Verona 2018 @ Lisbon Council
+ */
+
+#hmap{
+    height: 680px; 
+    max-width: 100%; 
+    margin: 0 auto;
+}
+
+.tline {
+    height: 120px;
+}
+.table-line h3 {
+    font-size: 1em;
+    height: 22px;
+    font-weight: 600;
+}
+.table-line i.icon-right {
+    float: right;
+    color: #2A9D8F;
+    cursor: pointer;
+}
+.table-summary {
+    font-size: 11px;
+}
+.table-summary tr {
+    height: 18px;
+}
+.table-summary tr td{
+    height: 18px;
+}
+.table-summary .tr-toggle {
+    text-align: center;
+    cursor: pointer;
+}
+
+.table-summary .tr-toggle td:hover {
+    background-color: #fcf8e3;
+}
+
+.table-summary .c1{
+    width: 55%;
+    white-space: nowrap;
+}
+.table-summary .c2{
+    text-align: right;
+    width: 45%;
+}
+
+.percentageFill{
+    height:30px;
+    border:1px solid black;
+}
+.selector-msvar{
+    margin: 1em 0 2em 0; 
+}
+
+/* GapMinder MS */
+#placeholder-gap-ms ,
+#placeholder-gap-indu {
+    margin: 1em 0;
+}
+.vzb-tool .vzb-tool-dialogs .vzb-dialogs-dialog .vzb-dialog-content,
+.vzb-tool,
+.vzb-tool .vzb-tool-treemenu .vzb-treemenu-wrap-outer .vzb-treemenu-wrap .vzb-treemenu-list-item-label {
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif !important;
+}
+.vzb-tool-stage g.vzb-bc-axis-y-title, 
+.vzb-tool-stage g.vzb-bc-axis-x-title {
+    font-size: 18px !important;
+}
+.vzb-tool-stage .tick text {
+    font-size: 14px !important;
+}
+g.vzb-data-warning.vzb-noexport {
+    visibility: hidden;
+}
+
+/*
+
+.modal-backdrop {
+    background-color: #FFF;
+    opacity: 0.9;
+}
+.modal-backdrop.in {
+    filter: alpha(opacity=92);
+    opacity: .92;
+}
+
+.modal-content{
+    border: 0;
+    box-shadow: initial;
+}
+
+.modal-dialog{
+    border: 1px solid #eee;
+}
+
+*/
+
+#indu-container .indu-graph {
+    height: 200px;
+}
+
+/* Small devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+    #hmap{
+        height: 680px; 
+    }
+    .table-summary.table-condensed>tbody>tr>td {
+        padding: 5px;
+    }
+}
+
+/* Medium devices (desktops, 992px and up) */
+@media (min-width: 992px) { 
+    #hmap{
+        height: 570px; 
+    }
+    .table-summary.table-condensed>tbody>tr>td {
+        padding: 2px 5px;
+    }
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) { 
+    #hmap{
+        height: 680px; 
+    }
+}
+
+/* Large devices (large desktops, 1200px and up) */
+@media (max-width: 520px) { 
+    #hmap{
+        height: 500px; 
+    }
+}
